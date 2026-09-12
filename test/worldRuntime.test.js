@@ -19,6 +19,7 @@ function createRuntime(overrides = {}) {
         return true
       },
     },
+    random: () => 0,
     ...overrides,
   })
   return {
@@ -80,6 +81,17 @@ test('resident motion is planned through the runtime interface', () => {
 
   assert.equal(result.aligned, true)
   assert.equal(result.running, true)
+})
+
+test('resident activity is selected through the runtime interface', () => {
+  const { runtime } = createRuntime()
+  const result = runtime.selectResidentActivity({
+    needs: { energy: 0.9, social: 0.1, curiosity: 0.8 },
+  })
+
+  assert.equal(result.ok, true)
+  assert.equal(result.activityId, 'socialize')
+  assert.equal(runtime.snapshot().lastActivity.activityId, 'socialize')
 })
 
 test('successful travel updates movement and breadcrumb state', () => {

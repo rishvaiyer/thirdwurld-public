@@ -1,5 +1,6 @@
 
 import { actionConfig } from '../config/actions.js'
+import { activityConfig } from '../config/activities.js'
 import { locomotionConfig } from '../config/locomotion.js'
 import { relationshipConfig } from '../config/relationships.js'
 import { simulationConfig } from '../config/simulation.js'
@@ -9,12 +10,14 @@ import { createStructuredActionParser } from '../actions/structuredAction.js'
 import { createWorldEventEvidence } from '../events/worldEventEvidence.js'
 import { createWorldNavigation } from '../navigation/worldNavigation.js'
 import { createRelationshipEvidence } from '../relationships/relationshipEvidence.js'
+import { createResidentActivitySelector } from '../simulation/residentActivitySelection.js'
 import { createResidentLocomotion } from '../simulation/residentLocomotion.js'
 import { createSimulationPacePolicy } from '../simulation/simulationPace.js'
 import { createSynchronizedWorldClock } from '../time/worldClock.js'
 
 const defaultConfigs = {
   actions: actionConfig,
+  activities: activityConfig,
   locomotion: locomotionConfig,
   relationships: relationshipConfig,
   simulation: simulationConfig,
@@ -26,12 +29,13 @@ function relationshipKey(sourceId, targetId) {
   return JSON.stringify([sourceId, targetId])
 }
 
-export function createWorldRuntime({ configs = {}, clock, navigationAdapter = {} } = {}) {
+export function createWorldRuntime({ configs = {}, clock, navigationAdapter = {}, random } = {}) {
   const resolvedConfigs = { ...defaultConfigs, ...configs }
   const navigation = createWorldNavigation(resolvedConfigs.world, navigationAdapter)
   const selectPace = createSimulationPacePolicy(resolvedConfigs.simulation)
   const parseAction = createStructuredActionParser(resolvedConfigs.actions)
   const relationshipEvidence = createRelationshipEvidence(resolvedConfigs.relationships)
+  const selectActivity = createResidentActivitySelector(resolvedConfigs.activities, { random })
   const planResidentMotion = createResidentLocomotion(resolvedConfigs.locomotion)
   const eventEvidence = createWorldEventEvidence(resolvedConfigs.worldEvents)
   const worldClock = createSynchronizedWorldClock(clock, clock?.readMonotonicTimeMs)
@@ -40,6 +44,7 @@ export function createWorldRuntime({ configs = {}, clock, navigationAdapter = {}
   let pace = selectPace({ humanCount })
   let breadcrumbTrail = []
   let lastAction = null
+  let lastActivity = null
   let nextEventNumber = 1
   const relationships = new Map()
   const eventReceipts = new Map()
@@ -103,6 +108,12 @@ export function createWorldRuntime({ configs = {}, clock, navigationAdapter = {}
     return { ok: true, ...structuredClone(receipt), duplicate: false }
   }
 
+  function selectResidentActivity(input) {
+    const result = selectActivity({ ...input, nowMs: input.nowMs ?? worldClock.now() })
+    if (result.ok) lastActivity = structuredClone(result)
+    return structuredClone(result)
+  }
+
   function snapshot() {
     return structuredClone({
       worldTimeMs: worldClock.now(),
@@ -111,6 +122,7 @@ export function createWorldRuntime({ configs = {}, clock, navigationAdapter = {}
       destinations: navigation.listDestinations(),
       breadcrumbTrail,
       lastAction,
+      lastActivity,
       relationships: [...relationships.values()],
       publicEvents,
     })
@@ -123,6 +135,7 @@ export function createWorldRuntime({ configs = {}, clock, navigationAdapter = {}
     applyInteraction,
     recordWorldEvent,
     planResidentMotion,
+    selectResidentActivity,
     snapshot,
   }
 }
