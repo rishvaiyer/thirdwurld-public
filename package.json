@@ -1,0 +1,12 @@
+{
+  "name": "thirdwurld-public",
+  "version": "0.1.0",
+  "private": false,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22.11.0"
+  }
+}
