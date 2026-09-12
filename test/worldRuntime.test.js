@@ -67,6 +67,22 @@ test('occupancy updates simulation pace through one interface', () => {
   assert.equal(runtime.setHumanCount(0).autonomousWorkAllowed, false)
 })
 
+test('resident motion is planned through the runtime interface', () => {
+  const { runtime } = createRuntime()
+  const result = runtime.planResidentMotion({
+    residentId: 'resident:a',
+    position: { x: 0, z: 0 },
+    waypoint: [0, 0, -10],
+    currentRotationY: 0,
+    deltaSeconds: 1 / 30,
+    segmentDistance: 10,
+    remainingDistance: 12,
+  })
+
+  assert.equal(result.aligned, true)
+  assert.equal(result.running, true)
+})
+
 test('successful travel updates movement and breadcrumb state', () => {
   const { runtime, movements } = createRuntime()
 
