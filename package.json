@@ -4,7 +4,9 @@
   "private": false,
   "type": "module",
   "scripts": {
-    "test": "node --test"
+    "test": "node --test",
+    "check:source": "node scripts/repositoryGuard.mjs",
+    "check": "npm run check:source && npm test"
   },
   "engines": {
     "node": ">=22.11.0"
