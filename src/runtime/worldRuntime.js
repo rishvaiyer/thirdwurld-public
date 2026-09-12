@@ -1,5 +1,6 @@
 
 import { actionConfig } from '../config/actions.js'
+import { locomotionConfig } from '../config/locomotion.js'
 import { relationshipConfig } from '../config/relationships.js'
 import { simulationConfig } from '../config/simulation.js'
 import { worldConfig } from '../config/world.js'
@@ -8,11 +9,13 @@ import { createStructuredActionParser } from '../actions/structuredAction.js'
 import { createWorldEventEvidence } from '../events/worldEventEvidence.js'
 import { createWorldNavigation } from '../navigation/worldNavigation.js'
 import { createRelationshipEvidence } from '../relationships/relationshipEvidence.js'
+import { createResidentLocomotion } from '../simulation/residentLocomotion.js'
 import { createSimulationPacePolicy } from '../simulation/simulationPace.js'
 import { createSynchronizedWorldClock } from '../time/worldClock.js'
 
 const defaultConfigs = {
   actions: actionConfig,
+  locomotion: locomotionConfig,
   relationships: relationshipConfig,
   simulation: simulationConfig,
   world: worldConfig,
@@ -29,6 +32,7 @@ export function createWorldRuntime({ configs = {}, clock, navigationAdapter = {}
   const selectPace = createSimulationPacePolicy(resolvedConfigs.simulation)
   const parseAction = createStructuredActionParser(resolvedConfigs.actions)
   const relationshipEvidence = createRelationshipEvidence(resolvedConfigs.relationships)
+  const planResidentMotion = createResidentLocomotion(resolvedConfigs.locomotion)
   const eventEvidence = createWorldEventEvidence(resolvedConfigs.worldEvents)
   const worldClock = createSynchronizedWorldClock(clock, clock?.readMonotonicTimeMs)
 
@@ -118,7 +122,7 @@ export function createWorldRuntime({ configs = {}, clock, navigationAdapter = {}
     parseResidentAction,
     applyInteraction,
     recordWorldEvent,
+    planResidentMotion,
     snapshot,
   }
 }
-
