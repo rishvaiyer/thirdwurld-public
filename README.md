@@ -12,6 +12,7 @@ The repository currently contains engine-independent modules for:
 - A synchronized world clock based on one shared epoch
 - Occupancy-aware simulation pacing and unattended cost control
 - Bounded route progress after long idle periods
+- Safe resident turning, gait selection, and neighbor avoidance
 - Strict parsing of structured resident actions
 - Evidence-backed relationship state
 - Privacy-safe world event validation and public projection
@@ -58,7 +59,7 @@ src/events/          privacy-safe event evidence
 src/navigation/      destination travel and breadcrumbs
 src/relationships/   evidence-backed relationship updates
 src/runtime/         engine-independent system composition
-src/simulation/      occupancy pacing and idle route progress
+src/simulation/      pacing, route progress, and resident locomotion
 src/time/            synchronized world time
 test/                behavior-focused tests
 ```
