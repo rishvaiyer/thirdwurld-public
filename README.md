@@ -15,6 +15,7 @@ The repository currently contains engine-independent modules for:
 - Strict parsing of structured resident actions
 - Evidence-backed relationship state
 - Privacy-safe world event validation and public projection
+- An in-memory runtime that composes the public systems
 
 These modules are tested in isolation and have no runtime package dependencies. This is not yet a runnable 3D world. Hyperfy engine integration will be added later through explicit adapters after the original Thirdwurld systems are established.
 
@@ -56,6 +57,7 @@ src/actions/         bounded structured-action parsing
 src/events/          privacy-safe event evidence
 src/navigation/      destination travel and breadcrumbs
 src/relationships/   evidence-backed relationship updates
+src/runtime/         engine-independent system composition
 src/simulation/      occupancy pacing and idle route progress
 src/time/            synchronized world time
 test/                behavior-focused tests
