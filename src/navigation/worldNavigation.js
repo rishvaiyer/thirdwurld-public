@@ -1,5 +1,6 @@
 
 const DESTINATION_ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
+const MOVEMENT_FAILURE_REASONS = new Set(['travel-unavailable', 'arrival-blocked', 'travel-failed'])
 
 function assertVector3(value, field) {
   if (!Array.isArray(value) || value.length !== 3 || !value.every(Number.isFinite)) {
@@ -85,7 +86,15 @@ export function createWorldNavigation(config, adapter = {}) {
 
     try {
       adapter.clearTransientState?.()
-      if (adapter.movePlayer(movement) === false) {
+      const movementResult = adapter.movePlayer(movement)
+      if (movementResult && typeof movementResult === 'object' && movementResult.ok === false) {
+        return {
+          ok: false,
+          reason: MOVEMENT_FAILURE_REASONS.has(movementResult.reason) ? movementResult.reason : 'travel-failed',
+          destination: copyDestination(destination),
+        }
+      }
+      if (movementResult === false) {
         return { ok: false, reason: 'arrival-blocked', destination: copyDestination(destination) }
       }
     } catch {

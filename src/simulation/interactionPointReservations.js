@@ -23,14 +23,14 @@ export function createInteractionPointReservations(config) {
   }
 
   function reserve({ residentId, locationId, candidates = [], occupied = [] }) {
-    const owner = identifier(residentId, 'residentId')
+    const resident = identifier(residentId, 'residentId')
     const location = identifier(locationId, 'locationId')
     if (!Array.isArray(candidates)) throw new TypeError('candidates must be an array')
     if (!Array.isArray(occupied)) throw new TypeError('occupied must be an array')
     const available = candidates.map((candidate, index) => point(candidate, 'candidates[' + index + ']'))
     const blockers = [
       ...[...claims.entries()]
-        .filter(([claimedBy]) => claimedBy !== owner)
+        .filter(([claimedBy]) => claimedBy !== resident)
         .map(([, claim]) => claim.point),
       ...occupied.map((position, index) => point(position, 'occupied[' + index + ']')),
     ]
@@ -39,7 +39,7 @@ export function createInteractionPointReservations(config) {
     )))
     if (!selected) return { ok: false, reason: 'no-safe-point' }
 
-    claims.set(owner, { residentId: owner, locationId: location, point: selected })
+    claims.set(resident, { residentId: resident, locationId: location, point: selected })
     return { ok: true, point: [...selected] }
   }
 
