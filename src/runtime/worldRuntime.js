@@ -4,6 +4,7 @@ import { actionConfig } from '../config/actions.js'
 import { activityConfig } from '../config/activities.js'
 import { locomotionConfig } from '../config/locomotion.js'
 import { relationshipConfig } from '../config/relationships.js'
+import { routineConfig } from '../config/routines.js'
 import { simulationConfig } from '../config/simulation.js'
 import { worldConfig } from '../config/world.js'
 import { worldEventConfig } from '../config/worldEvents.js'
@@ -13,6 +14,7 @@ import { createWorldNavigation } from '../navigation/worldNavigation.js'
 import { createRelationshipEvidence } from '../relationships/relationshipEvidence.js'
 import { createResidentActivitySelector } from '../simulation/residentActivitySelection.js'
 import { createResidentLocomotion } from '../simulation/residentLocomotion.js'
+import { createResidentRoutine } from '../simulation/residentRoutine.js'
 import { createSimulationPacePolicy } from '../simulation/simulationPace.js'
 import { createSynchronizedWorldClock } from '../time/worldClock.js'
 
@@ -21,6 +23,7 @@ const defaultConfigs = {
   activities: activityConfig,
   locomotion: locomotionConfig,
   relationships: relationshipConfig,
+  routines: routineConfig,
   simulation: simulationConfig,
   world: worldConfig,
   worldEvents: worldEventConfig,
@@ -37,6 +40,9 @@ export function createWorldRuntime({ configs = {}, clock, navigationAdapter = {}
   const parseAction = createStructuredActionParser(resolvedConfigs.actions)
   const relationshipEvidence = createRelationshipEvidence(resolvedConfigs.relationships)
   const selectActivity = createResidentActivitySelector(resolvedConfigs.activities, { random })
+  const selectRoutinePeriod = createResidentRoutine(resolvedConfigs.routines, {
+    knownActivityIds: resolvedConfigs.activities.activities.map(activity => activity.id),
+  })
   const planResidentMotion = createResidentLocomotion(resolvedConfigs.locomotion)
   const eventEvidence = createWorldEventEvidence(resolvedConfigs.worldEvents)
   const worldClock = createSynchronizedWorldClock(clock, clock?.readMonotonicTimeMs)
@@ -115,6 +121,10 @@ export function createWorldRuntime({ configs = {}, clock, navigationAdapter = {}
     return structuredClone(result)
   }
 
+  function currentResidentRoutine() {
+    return structuredClone(selectRoutinePeriod(worldClock.now()))
+  }
+
   function snapshot() {
     return structuredClone({
       worldTimeMs: worldClock.now(),
@@ -137,6 +147,7 @@ export function createWorldRuntime({ configs = {}, clock, navigationAdapter = {}
     recordWorldEvent,
     planResidentMotion,
     selectResidentActivity,
+    currentResidentRoutine,
     snapshot,
   }
 }
