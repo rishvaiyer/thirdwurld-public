@@ -33,6 +33,7 @@ jobs:
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version: 1.25.x
+          cache: false
       - name: Scan Git history for secrets
         run: go run github.com/zricethezav/gitleaks/v8@v8.30.1 git --redact --no-banner
 
@@ -46,4 +47,3 @@ jobs:
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-severity: moderate
-

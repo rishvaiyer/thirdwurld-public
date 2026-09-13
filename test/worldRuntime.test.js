@@ -19,6 +19,7 @@ function createRuntime(overrides = {}) {
         return true
       },
     },
+    random: () => 0,
     ...overrides,
   })
   return {
@@ -59,11 +60,63 @@ test('a new runtime exposes a safe idle snapshot', () => {
 })
 
 test('occupancy updates simulation pace through one interface', () => {
-  const { runtime } = createRuntime()
+  const { runtime, advanceTime } = createRuntime()
 
   assert.equal(runtime.setHumanCount(1).mode, 'active')
   assert.equal(runtime.snapshot().humanCount, 1)
-  assert.equal(runtime.setHumanCount(0).autonomousWorkAllowed, false)
+  assert.equal(runtime.setHumanCount(0).reason, 'empty-world-grace')
+  advanceTime(15 * 60 * 1_000)
+  assert.equal(runtime.snapshot().pace.autonomousWorkAllowed, false)
+  assert.equal(runtime.snapshot().presence.mode, 'empty')
+})
+
+test('resident motion is planned through the runtime interface', () => {
+  const { runtime } = createRuntime()
+  const result = runtime.planResidentMotion({
+    residentId: 'resident:a',
+    position: { x: 0, z: 0 },
+    waypoint: [0, 0, -10],
+    currentRotationY: 0,
+    deltaSeconds: 1 / 30,
+    segmentDistance: 10,
+    remainingDistance: 12,
+  })
+
+  assert.equal(result.aligned, true)
+  assert.equal(result.running, true)
+})
+
+test('resident activity is selected through the runtime interface', () => {
+  const { runtime } = createRuntime()
+  const result = runtime.selectResidentActivity({
+    needs: { energy: 0.9, social: 0.1, curiosity: 0.8 },
+  })
+
+  assert.equal(result.ok, true)
+  assert.equal(result.activityId, 'socialize')
+  assert.equal(runtime.snapshot().lastActivity.activityId, 'socialize')
+})
+
+test('resident routine follows synchronized world time', () => {
+  const { runtime, advanceTime } = createRuntime()
+
+  assert.equal(runtime.currentResidentRoutine().activityId, 'rest')
+  advanceTime(9 * 60 * 60 * 1_000)
+  assert.equal(runtime.currentResidentRoutine().activityId, 'explore')
+})
+
+test('interaction points are reserved and released through the runtime', () => {
+  const { runtime } = createRuntime()
+  const result = runtime.reserveInteractionPoint({
+    residentId: 'resident:a',
+    locationId: 'town-square',
+    candidates: [[0, 0, 0]],
+  })
+
+  assert.equal(result.ok, true)
+  assert.equal(runtime.snapshot().interactionPointReservations.length, 1)
+  assert.equal(runtime.releaseInteractionPoint('resident:a'), true)
+  assert.equal(runtime.snapshot().interactionPointReservations.length, 0)
 })
 
 test('successful travel updates movement and breadcrumb state', () => {

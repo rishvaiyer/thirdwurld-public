@@ -18,19 +18,25 @@ export function createSimulationPacePolicy(config) {
     throw new TypeError('pace.liveWhileEmpty must be a boolean')
   }
 
-  return function selectSimulationPace({ humanCount }) {
+  return function selectSimulationPace({ humanCount, emptyGraceActive = false }) {
     if (!Number.isInteger(humanCount) || humanCount < 0) {
       throw new TypeError('humanCount must be a non-negative integer')
     }
+    if (typeof emptyGraceActive !== 'boolean') throw new TypeError('emptyGraceActive must be a boolean')
 
     const occupied = humanCount > 0
-    const active = occupied || pace.liveWhileEmpty
+    const active = occupied || pace.liveWhileEmpty || emptyGraceActive
     return {
       mode: active ? 'active' : 'idle',
       tickIntervalSeconds: active ? activeTickIntervalSeconds : idleTickIntervalSeconds,
       autonomousWorkAllowed: active,
-      reason: occupied ? 'human-present' : pace.liveWhileEmpty ? 'configured-always-live' : 'empty-world',
+      reason: occupied
+        ? 'human-present'
+        : pace.liveWhileEmpty
+          ? 'configured-always-live'
+          : emptyGraceActive
+            ? 'empty-world-grace'
+            : 'empty-world',
     }
   }
 }
-
