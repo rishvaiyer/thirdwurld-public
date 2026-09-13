@@ -126,6 +126,18 @@ test('travel distinguishes unavailable, blocked, and failed movement', () => {
   )
   assert.equal(
     createWorldNavigation(config(), {
+      movePlayer: () => ({ ok: false, reason: 'travel-unavailable' }),
+    }).travel('plaza').reason,
+    'travel-unavailable'
+  )
+  assert.equal(
+    createWorldNavigation(config(), {
+      movePlayer: () => ({ ok: false, reason: 'adapter-private-detail' }),
+    }).travel('plaza').reason,
+    'travel-failed'
+  )
+  assert.equal(
+    createWorldNavigation(config(), {
       movePlayer() {
         throw new Error('adapter failed')
       },
