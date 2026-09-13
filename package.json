@@ -1,8 +1,19 @@
 {
   "name": "thirdwurld-public",
   "version": "0.1.0",
+  "description": "Engine-independent Thirdwurld systems with an explicit Hyperfy adapter",
   "private": false,
   "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./hyperfy": "./src/hyperfy/createHyperfyRuntime.js"
+  },
+  "files": [
+    "src",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
     "test": "node --test",
     "check:source": "node scripts/repositoryGuard.mjs",
