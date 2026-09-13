@@ -19,14 +19,19 @@
       <summary>Architecture contents</summary>
       <nav aria-label="Mobile documentation navigation">
         <a href="#overview">System overview</a>
+        <a href="#topology">System topology</a>
         <a href="#runtime">World runtime</a>
         <a href="#lifecycle">Resident lifecycle</a>
         <a href="#state">State and relationships</a>
         <a href="#actions">Action and event flow</a>
+        <a href="#authority">Authority and privacy</a>
+        <a href="#persistence">Persistence</a>
         <a href="#hyperfy">Hyperfy boundary</a>
         <a href="#configuration">Configuration</a>
         <a href="#safety">Safety boundaries</a>
+        <a href="#delivery">Build and delivery</a>
         <a href="#verification">Verification</a>
+        <a href="#boundaries">Current boundaries</a>
         <a href="#source-map">Public source map</a>
       </nav>
     </details>
@@ -39,10 +44,13 @@
         </div>
         <div class="nav-group">
           <p>Architecture</p>
+          <a href="#topology">System topology</a>
           <a href="#runtime">World runtime</a>
           <a href="#lifecycle">Resident lifecycle</a>
           <a href="#state">State and relationships</a>
           <a href="#actions">Action and event flow</a>
+          <a href="#authority">Authority and privacy</a>
+          <a href="#persistence">Persistence</a>
           <a href="#hyperfy">Hyperfy boundary</a>
         </div>
         <div class="nav-group">
@@ -51,8 +59,13 @@
           <a href="#safety">Safety boundaries</a>
         </div>
         <div class="nav-group">
-          <p>Reference</p>
+          <p>Delivery</p>
+          <a href="#delivery">Build and delivery</a>
           <a href="#verification">Verification</a>
+          <a href="#boundaries">Current boundaries</a>
+        </div>
+        <div class="nav-group">
+          <p>Reference</p>
           <a href="#source-map">Public source map</a>
         </div>
       </aside>
@@ -81,8 +94,31 @@
             </div>
           </section>
 
-          <section id="runtime">
+          <section id="topology">
             <div class="section-number">02</div>
+            <h2>System topology</h2>
+            <p>The public runtime is one bounded layer inside the larger Thirdwurld system. The surrounding world engine supplies real-time world capabilities, while resident and storage services remain separate from this package.</p>
+
+            <table>
+              <thead>
+                <tr><th>Layer</th><th>Responsibility</th><th>Public status</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>3D world engine</td><td>Rendering, connected players, synchronized world time, and movement.</td><td>Connected through the Hyperfy adapter.</td></tr>
+                <tr><td>World runtime</td><td>Resident routines, activity choice, navigation, relationships, events, and simulation pace.</td><td>Implemented in this repository.</td></tr>
+                <tr><td>Resident process</td><td>Supplies needs and context, requests allowed actions, and consumes runtime state.</td><td>Integration boundary only.</td></tr>
+                <tr><td>Durable services</td><td>Persist resident memory, relationship history, events, and world state across restarts.</td><td>Not included in this repository.</td></tr>
+              </tbody>
+            </table>
+
+            <div class="scope-note">
+              <strong>Architecture rule</strong>
+              Rendering does not become authority. External clients propose actions, validation decides what is accepted, and only approved results become runtime state or public projections.
+            </div>
+          </section>
+
+          <section id="runtime">
+            <div class="section-number">03</div>
             <h2>World runtime</h2>
             <p><code>createWorldRuntime</code> is the composition root. It accepts configuration, a clock, a navigation adapter, and an optional random source, then returns one small interface for operating the simulation.</p>
 
@@ -121,7 +157,7 @@
           </section>
 
           <section id="lifecycle">
-            <div class="section-number">03</div>
+            <div class="section-number">04</div>
             <h2>Resident lifecycle</h2>
             <p>A resident's behavior is assembled from bounded decisions. Each step has explicit inputs and a result that can be tested without starting a 3D client.</p>
 
@@ -138,7 +174,7 @@
           </section>
 
           <section id="state">
-            <div class="section-number">04</div>
+            <div class="section-number">05</div>
             <h2>State and relationships</h2>
             <p>Relationship state is directional. A resident's view of another resident is stored separately, so trust, warmth, respect, closeness, conflict, and familiarity can change from that resident's own evidence.</p>
 
@@ -163,7 +199,7 @@
           </section>
 
           <section id="actions">
-            <div class="section-number">05</div>
+            <div class="section-number">06</div>
             <h2>Action and event flow</h2>
             <p>Agent output does not become world state directly. Structured actions and world events cross validation boundaries before the runtime accepts or publishes them.</p>
 
@@ -186,8 +222,48 @@
             <p>Only successful events marked public receive a public projection. Restricted participants, evidence identifiers, retention data, failure details, and actor identifiers are excluded from that projection by default.</p>
           </section>
 
+          <section id="authority">
+            <div class="section-number">07</div>
+            <h2>Authority and privacy model</h2>
+            <p>The runtime owns acceptance rules for the state it exposes. Callers receive explicit results instead of permission to mutate internal collections directly.</p>
+
+            <table>
+              <thead>
+                <tr><th>Concern</th><th>Control</th><th>Failure behavior</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Agent action</td><td>Allowlisted fields, types, confidence values, and evidence identifiers.</td><td>Reject before runtime state changes.</td></tr>
+                <tr><td>Event visibility</td><td>Separate public and restricted event rules with a minimal public projection.</td><td>Do not publish the event.</td></tr>
+                <tr><td>Event retries</td><td>Actor-scoped idempotency keys and deterministic fingerprints.</td><td>Return the receipt or an idempotency conflict.</td></tr>
+                <tr><td>Runtime state</td><td>Private maps and cloned return values.</td><td>Caller mutation cannot alter stored state.</td></tr>
+                <tr><td>World movement</td><td>Known destinations and normalized engine results.</td><td>Return unavailable, blocked, or failed travel.</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section id="persistence">
+            <div class="section-number">08</div>
+            <h2>Persistence</h2>
+            <p>This package defines state shapes and evidence rules, but it does not claim durable storage. Its current runtime collections live in memory and begin empty when a new runtime instance is created.</p>
+
+            <table>
+              <thead>
+                <tr><th>Data</th><th>Current location</th><th>Lifetime</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Relationship state</td><td>Directional entries in the runtime relationship map.</td><td>Runtime instance.</td></tr>
+                <tr><td>Event receipts</td><td>Actor and idempotency-key entries in the receipt map.</td><td>Runtime instance.</td></tr>
+                <tr><td>Public events</td><td>Privacy-filtered projections in the runtime snapshot.</td><td>Runtime instance.</td></tr>
+                <tr><td>World configuration</td><td>Versioned JavaScript configuration modules.</td><td>Repository version.</td></tr>
+                <tr><td>Resident memory</td><td>Expected from a separate durable integration.</td><td>Outside this repository.</td></tr>
+              </tbody>
+            </table>
+
+            <p>A durable adapter can store accepted receipts and resident state without moving storage concerns into activity selection, navigation, or relationship scoring.</p>
+          </section>
+
           <section id="hyperfy">
-            <div class="section-number">06</div>
+            <div class="section-number">09</div>
             <h2>Hyperfy boundary</h2>
             <p>Hyperfy is connected at the edge rather than imported through every module. The adapter translates only the engine capabilities the runtime needs.</p>
 
@@ -222,7 +298,7 @@
           </section>
 
           <section id="configuration">
-            <div class="section-number">07</div>
+            <div class="section-number">10</div>
             <h2>Configuration</h2>
             <p>World-specific names and tuning values live in configuration modules. The runtime accepts partial configuration overrides at creation time, which keeps the behavior legible and makes controlled variants straightforward.</p>
 
@@ -241,7 +317,7 @@
           </section>
 
           <section id="safety">
-            <div class="section-number">08</div>
+            <div class="section-number">11</div>
             <h2>Safety boundaries</h2>
             <p>The public foundation treats outside input as untrusted and makes important failures visible to the caller.</p>
 
@@ -260,8 +336,22 @@
             </table>
           </section>
 
+          <section id="delivery">
+            <div class="section-number">12</div>
+            <h2>Build and delivery</h2>
+            <p>The runtime is distributed as a small ECMAScript module package with an explicit root export and a dedicated Hyperfy entry point. The documentation is deployed independently as a static GitHub Pages site.</p>
+
+            <ol class="world-cycle">
+              <li><span>Check source</span><p>Validate JavaScript syntax and scan public files for unsafe or unfinished content.</p></li>
+              <li><span>Run behavior tests</span><p>Exercise module contracts with the built-in Node.js test runner.</p></li>
+              <li><span>Inspect package</span><p>Confirm that only <code>src</code> and the README enter the package archive.</p></li>
+              <li><span>Review changes</span><p>Run dependency review and a full-history credential scan on pull requests.</p></li>
+              <li><span>Publish docs</span><p>Upload the static site and deploy it through the GitHub Pages environment.</p></li>
+            </ol>
+          </section>
+
           <section id="verification">
-            <div class="section-number">09</div>
+            <div class="section-number">13</div>
             <h2>Verification</h2>
             <p>The repository uses the Node.js test runner and a source guard. Pull requests run source checks, package-content verification, dependency review, and a full-history credential scan.</p>
 
@@ -273,8 +363,20 @@
             <p>Passing checks establish the behavior of these public modules. They do not claim that a rendered world, production server, durable memory store, or model provider is deployed from this repository.</p>
           </section>
 
+          <section id="boundaries">
+            <div class="section-number">14</div>
+            <h2>Current boundaries</h2>
+            <ul>
+              <li>The repository contains runtime foundations, not a complete playable world.</li>
+              <li>Relationship evidence is implemented; durable resident memory and retrieval are not.</li>
+              <li>The Hyperfy adapter is implemented and tested against its expected world interface. A live world deployment is separate.</li>
+              <li>Model-provider orchestration, prompting, and credentials are intentionally outside the public package.</li>
+              <li>Passing checks establish module behavior, not usage, scale, or production availability.</li>
+            </ul>
+          </section>
+
           <section id="source-map">
-            <div class="section-number">10</div>
+            <div class="section-number">15</div>
             <h2>Public source map</h2>
             <p>The code follows the same boundaries described above.</p>
 
@@ -299,14 +401,20 @@
 
       <aside class="right-rail" aria-label="On this page">
         <p>On this page</p>
+        <a href="#overview">System overview</a>
+        <a href="#topology">System topology</a>
         <a href="#runtime">World runtime</a>
         <a href="#lifecycle">Resident lifecycle</a>
         <a href="#state">State and relationships</a>
         <a href="#actions">Action and event flow</a>
+        <a href="#authority">Authority and privacy</a>
+        <a href="#persistence">Persistence</a>
         <a href="#hyperfy">Hyperfy boundary</a>
         <a href="#configuration">Configuration</a>
         <a href="#safety">Safety boundaries</a>
+        <a href="#delivery">Build and delivery</a>
         <a href="#verification">Verification</a>
+        <a href="#boundaries">Current boundaries</a>
         <a href="#source-map">Public source map</a>
       </aside>
     </div>
