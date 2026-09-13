@@ -55,7 +55,7 @@ test('a new runtime exposes a safe idle snapshot', () => {
   assert.equal(snapshot.worldTimeMs, 10_000)
   assert.equal(snapshot.humanCount, 0)
   assert.equal(snapshot.pace.mode, 'idle')
-  assert.equal(snapshot.destinations.length, 3)
+  assert.equal(snapshot.destinations.length, 4)
   assert.deepEqual(snapshot.publicEvents, [])
 })
 

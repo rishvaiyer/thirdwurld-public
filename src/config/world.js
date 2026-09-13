@@ -13,6 +13,14 @@ export const worldConfig = {
       entrance: [0, 0.25, -6],
     },
     {
+      id: 'shared-resident-house',
+      label: 'Shared Resident House',
+      category: 'Home',
+      accent: '#9bb47c',
+      approach: [0, 0.25, 46],
+      entrance: [0, 0.25, 50],
+    },
+    {
       id: 'workshop',
       label: 'Workshop',
       category: 'Create',
@@ -30,4 +38,3 @@ export const worldConfig = {
     },
   ],
 }
-

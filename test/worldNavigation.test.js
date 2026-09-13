@@ -66,8 +66,14 @@ test('the default public configuration is valid', () => {
   const navigation = createWorldNavigation(worldConfig)
   assert.deepEqual(
     navigation.listDestinations().map(destination => destination.id),
-    ['town-square', 'workshop', 'pollinator-garden']
+    ['town-square', 'shared-resident-house', 'workshop', 'pollinator-garden']
   )
+  const house = navigation.listDestinations().find(destination => destination.id === 'shared-resident-house')
+  assert.equal(house.label, 'Shared Resident House')
+  assert.equal(house.category, 'Home')
+  assert.equal(house.accent, '#9bb47c')
+  assert.deepEqual(house.approach, [0, 0.25, 46])
+  assert.deepEqual(house.entrance, [0, 0.25, 50])
 })
 
 test('invalid configuration fails immediately with a useful location', () => {
