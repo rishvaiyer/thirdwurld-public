@@ -21,8 +21,9 @@ The repository currently contains engine-independent modules for:
 - Evidence-backed relationship state
 - Privacy-safe world event validation and public projection
 - An in-memory runtime that composes the public systems
+- A thin Hyperfy adapter for safe travel, occupancy, and synchronized time
 
-These modules are tested in isolation and have no runtime package dependencies. This is not yet a runnable 3D world. Hyperfy engine integration will be added later through explicit adapters after the original Thirdwurld systems are established.
+These modules are tested in isolation and have no runtime package dependencies. This is not a bundled 3D world or a copy of Hyperfy. The adapter connects a supplied Hyperfy world object to the engine-independent Thirdwurld runtime.
 
 ## Design approach
 
@@ -35,7 +36,7 @@ editable configuration
 Thirdwurld domain modules
         |
         v
-future Hyperfy adapters
+Hyperfy adapter
 ```
 
 The modules return structured outcomes instead of hiding failures. External systems can adapt those outcomes to a renderer, server, database, or user interface without changing the underlying rules.
@@ -60,6 +61,7 @@ npm run check
 src/config/          editable public configuration
 src/actions/         bounded structured-action parsing
 src/events/          privacy-safe event evidence
+src/hyperfy/         explicit Hyperfy integration seam
 src/navigation/      destination travel and breadcrumbs
 src/relationships/   evidence-backed relationship updates
 src/runtime/         engine-independent system composition
