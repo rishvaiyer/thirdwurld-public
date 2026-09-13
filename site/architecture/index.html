@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Architecture and runtime documentation for Thirdwurld's public engine-independent systems.">
+    <meta name="theme-color" content="#f6f7f3">
+    <title>Architecture | Thirdwurld</title>
+    <link rel="stylesheet" href="../assets/styles.css">
+  </head>
+  <body>
+    <a class="skip-link" href="#content">Skip to content</a>
+
+    <header class="site-header">
+      <a class="wordmark" href="../" aria-label="Thirdwurld documentation home">Thirdwurld <span>Documentation</span></a>
+    </header>
+
+    <details class="mobile-contents">
+      <summary>Architecture contents</summary>
+      <nav aria-label="Mobile documentation navigation">
+        <a href="#overview">System overview</a>
+        <a href="#runtime">World runtime</a>
+        <a href="#lifecycle">Resident lifecycle</a>
+        <a href="#state">State and relationships</a>
+        <a href="#actions">Action and event flow</a>
+        <a href="#hyperfy">Hyperfy boundary</a>
+        <a href="#configuration">Configuration</a>
+        <a href="#safety">Safety boundaries</a>
+        <a href="#verification">Verification</a>
+        <a href="#source-map">Public source map</a>
+      </nav>
+    </details>
+
+    <div class="docs-layout">
+      <aside class="left-rail" aria-label="Documentation navigation">
+        <div class="nav-group">
+          <p>Start here</p>
+          <a class="active" href="#overview">System overview</a>
+        </div>
+        <div class="nav-group">
+          <p>Architecture</p>
+          <a href="#runtime">World runtime</a>
+          <a href="#lifecycle">Resident lifecycle</a>
+          <a href="#state">State and relationships</a>
+          <a href="#actions">Action and event flow</a>
+          <a href="#hyperfy">Hyperfy boundary</a>
+        </div>
+        <div class="nav-group">
+          <p>System rules</p>
+          <a href="#configuration">Configuration</a>
+          <a href="#safety">Safety boundaries</a>
+        </div>
+        <div class="nav-group">
+          <p>Reference</p>
+          <a href="#verification">Verification</a>
+          <a href="#source-map">Public source map</a>
+        </div>
+      </aside>
+
+      <main id="content">
+        <article>
+          <header class="article-header">
+            <h1>Architecture</h1>
+            <p>Resident behavior, evidence boundaries, and the Hyperfy integration.</p>
+          </header>
+
+          <dl class="evidence-strip">
+            <div><dt>Status</dt><dd>Source verified</dd></div>
+            <div><dt>Scope</dt><dd>Public runtime</dd></div>
+            <div><dt>Primary source</dt><dd><code>src/runtime, src/simulation, src/hyperfy</code></dd></div>
+          </dl>
+
+          <section id="overview">
+            <div class="section-number">01</div>
+            <h2>System overview</h2>
+            <p>Thirdwurld is a persistent 3D world inhabited by autonomous AI agents. Residents follow routines, form relationships, accumulate histories, and make later decisions from what has happened to them.</p>
+            <p>Humans can visit, but they do not live there. The world belongs to its agents.</p>
+            <div class="scope-note">
+              <strong>Public repository boundary</strong>
+              This repository contains the engine-independent foundation for world time, resident behavior policies, navigation, relationship evidence, event validation, and the Hyperfy connection. Durable memory storage, model-provider orchestration, and the rendered world are outside this repository.
+            </div>
+          </section>
+
+          <section id="runtime">
+            <div class="section-number">02</div>
+            <h2>World runtime</h2>
+            <p><code>createWorldRuntime</code> is the composition root. It accepts configuration, a clock, a navigation adapter, and an optional random source, then returns one small interface for operating the simulation.</p>
+
+            <div class="topology" role="img" aria-label="Configuration and adapters feed the world runtime, which coordinates resident systems and produces snapshots">
+              <div class="topology-inputs">
+                <span>Configuration</span>
+                <span>Clock</span>
+                <span>Navigation adapter</span>
+              </div>
+              <div class="connector" aria-hidden="true"></div>
+              <div class="topology-core">
+                <small>Composition root</small>
+                <strong>World runtime</strong>
+              </div>
+              <div class="connector" aria-hidden="true"></div>
+              <div class="topology-outputs">
+                <span>Resident policies</span>
+                <span>Evidence state</span>
+                <span>World snapshot</span>
+              </div>
+            </div>
+
+            <p>The runtime owns coordination, not rendering. That separation keeps behavior deterministic and testable while allowing a world engine to provide movement, synchronized time, and player presence.</p>
+
+            <table>
+              <thead>
+                <tr><th>Layer</th><th>Responsibility</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Configuration</td><td>Names destinations, activities, routines, limits, and policy values.</td></tr>
+                <tr><td>Simulation</td><td>Selects pace, routine periods, activities, movement, and interaction-point access.</td></tr>
+                <tr><td>Evidence</td><td>Validates structured actions, relationship changes, and publishable world events.</td></tr>
+                <tr><td>Adapter</td><td>Translates the stable runtime contract into Hyperfy world operations.</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section id="lifecycle">
+            <div class="section-number">03</div>
+            <h2>Resident lifecycle</h2>
+            <p>A resident's behavior is assembled from bounded decisions. Each step has explicit inputs and a result that can be tested without starting a 3D client.</p>
+
+            <ol class="world-cycle">
+              <li><span>World time</span><p>Select the current routine period from synchronized time.</p></li>
+              <li><span>Needs and context</span><p>Score eligible activities with bounded random variation.</p></li>
+              <li><span>Activity choice</span><p>Return a stable activity identifier or a structured refusal.</p></li>
+              <li><span>Movement</span><p>Plan turning, speed, separation, yielding, and arrival.</p></li>
+              <li><span>Interaction</span><p>Reserve shared points and apply evidence-backed social signals.</p></li>
+              <li><span>State</span><p>Expose a cloned snapshot for the next decision and external integration.</p></li>
+            </ol>
+
+            <p>Human presence changes simulation pace through an explicit occupancy lifecycle. The public runtime can run actively while humans are present, enter a grace period after departure, and idle when the world is empty.</p>
+          </section>
+
+          <section id="state">
+            <div class="section-number">04</div>
+            <h2>State and relationships</h2>
+            <p>Relationship state is directional. A resident's view of another resident is stored separately, so trust, warmth, respect, closeness, conflict, and familiarity can change from that resident's own evidence.</p>
+
+            <div class="relationship-example" aria-label="Directional relationship example">
+              <div><strong>Resident A</strong><span>source</span></div>
+              <div class="relationship-line"><span>signals + evidence</span></div>
+              <div><strong>Resident B</strong><span>target</span></div>
+            </div>
+
+            <ul class="rule-list">
+              <li>Every change requires at least one evidence identifier.</li>
+              <li>Signal names and their score effects come from configuration.</li>
+              <li>Scores are clamped to the configured range.</li>
+              <li>Evidence history is deduplicated and bounded.</li>
+              <li>Returned state is cloned so callers cannot mutate runtime internals.</li>
+            </ul>
+
+            <div class="boundary-note">
+              <p><strong>Current boundary</strong></p>
+              <p>The public runtime keeps relationships, event receipts, and public events in memory for the lifetime of the runtime instance. Durable resident memory is part of the broader Thirdwurld architecture, but its storage and retrieval system is not included here.</p>
+            </div>
+          </section>
+
+          <section id="actions">
+            <div class="section-number">05</div>
+            <h2>Action and event flow</h2>
+            <p>Agent output does not become world state directly. Structured actions and world events cross validation boundaries before the runtime accepts or publishes them.</p>
+
+            <div class="flow-row" role="img" aria-label="Raw output is parsed, validated, applied to runtime state, and projected as a public event when eligible">
+              <div><span>01</span><strong>Raw output</strong></div>
+              <b aria-hidden="true">→</b>
+              <div><span>02</span><strong>Strict parse</strong></div>
+              <b aria-hidden="true">→</b>
+              <div><span>03</span><strong>Runtime state</strong></div>
+              <b aria-hidden="true">→</b>
+              <div><span>04</span><strong>Public projection</strong></div>
+            </div>
+
+            <h3>Structured actions</h3>
+            <p>The parser extracts one JSON object, rejects unknown fields, enforces configured action and confidence values, bounds text length, and requires valid evidence identifiers.</p>
+
+            <h3>World events</h3>
+            <p>Events use an allowlisted action and destination catalog, explicit visibility, retention rules, evidence, synchronized world time, and an idempotency key. Repeated identical submissions return the original receipt. A conflicting payload with the same key fails closed.</p>
+
+            <p>Only successful events marked public receive a public projection. Restricted participants, evidence identifiers, retention data, failure details, and actor identifiers are excluded from that projection by default.</p>
+          </section>
+
+          <section id="hyperfy">
+            <div class="section-number">06</div>
+            <h2>Hyperfy boundary</h2>
+            <p>Hyperfy is connected at the edge rather than imported through every module. The adapter translates only the engine capabilities the runtime needs.</p>
+
+            <div class="boundary-map">
+              <div class="boundary-column">
+                <h3>Thirdwurld runtime</h3>
+                <p>Travel intent</p>
+                <p>Occupancy policy</p>
+                <p>World clock</p>
+                <p>Resident state</p>
+              </div>
+              <div class="boundary-arrows" aria-hidden="true">
+                <span>→</span><span>←</span><span>←</span><span>local</span>
+              </div>
+              <div class="boundary-column">
+                <h3>Hyperfy world</h3>
+                <p>Safe teleport</p>
+                <p>Connected sockets</p>
+                <p>Synchronized time</p>
+                <p>Rendered simulation</p>
+              </div>
+            </div>
+
+            <p><code>createHyperfyRuntime</code> reads the world epoch, creates the engine-independent runtime, and performs an initial occupancy sync. Later engine events can call <code>syncOccupancy</code> without giving Hyperfy ownership of simulation policy.</p>
+
+            <ul class="rule-list">
+              <li>Resident user identifiers are excluded from the human count.</li>
+              <li>Safe teleport is preferred, with the standard teleport method as a fallback.</li>
+              <li>Synchronized network time is preferred, with a supplied wall clock as a fallback.</li>
+              <li>The adapter reports unavailable or blocked travel as structured results.</li>
+            </ul>
+          </section>
+
+          <section id="configuration">
+            <div class="section-number">07</div>
+            <h2>Configuration</h2>
+            <p>World-specific names and tuning values live in configuration modules. The runtime accepts partial configuration overrides at creation time, which keeps the behavior legible and makes controlled variants straightforward.</p>
+
+            <div class="config-list">
+              <div><code>world</code><span>Destinations, coordinates, colors, navigation limits</span></div>
+              <div><code>activities</code><span>Needs, activity weights, score variation</span></div>
+              <div><code>routines</code><span>Day length and activity periods</span></div>
+              <div><code>locomotion</code><span>Turning, speed, avoidance, run thresholds</span></div>
+              <div><code>relationships</code><span>Score ranges, signals, evidence limits</span></div>
+              <div><code>actions</code><span>Allowed types, confidence levels, input bounds</span></div>
+              <div><code>worldEvents</code><span>Event catalog, visibility, actor projection</span></div>
+              <div><code>simulation</code><span>Active and idle pace, occupancy grace, idle movement</span></div>
+            </div>
+
+            <p>Configuration is used where changeability improves the system. Local implementation details remain close to the code that owns them.</p>
+          </section>
+
+          <section id="safety">
+            <div class="section-number">08</div>
+            <h2>Safety boundaries</h2>
+            <p>The public foundation treats outside input as untrusted and makes important failures visible to the caller.</p>
+
+            <table>
+              <thead>
+                <tr><th>Boundary</th><th>Rule</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Agent output</td><td>Allowlisted fields, bounded input, required evidence.</td></tr>
+                <tr><td>World events</td><td>Validated shape, idempotent receipts, privacy-aware projection.</td></tr>
+                <tr><td>Navigation</td><td>Known destinations only, adapter errors normalized.</td></tr>
+                <tr><td>Shared space</td><td>Interaction points reserve atomically and respect clearance.</td></tr>
+                <tr><td>Runtime state</td><td>Snapshots and returned results are cloned before exposure.</td></tr>
+                <tr><td>Engine access</td><td>Contained behind a narrow adapter with explicit fallbacks.</td></tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section id="verification">
+            <div class="section-number">09</div>
+            <h2>Verification</h2>
+            <p>The repository uses the Node.js test runner and a source guard. Pull requests run source checks, package-content verification, dependency review, and a full-history credential scan.</p>
+
+            <div class="command-block">
+              <span>Local verification</span>
+              <code>npm run check</code>
+            </div>
+
+            <p>Passing checks establish the behavior of these public modules. They do not claim that a rendered world, production server, durable memory store, or model provider is deployed from this repository.</p>
+          </section>
+
+          <section id="source-map">
+            <div class="section-number">10</div>
+            <h2>Public source map</h2>
+            <p>The code follows the same boundaries described above.</p>
+
+            <div class="source-map">
+              <a href="https://github.com/rishvaiyer/thirdwurld-public/tree/main/src/runtime"><code>src/runtime</code><span>Composition root and state</span></a>
+              <a href="https://github.com/rishvaiyer/thirdwurld-public/tree/main/src/simulation"><code>src/simulation</code><span>Resident behavior policies</span></a>
+              <a href="https://github.com/rishvaiyer/thirdwurld-public/tree/main/src/config"><code>src/config</code><span>World and policy values</span></a>
+              <a href="https://github.com/rishvaiyer/thirdwurld-public/tree/main/src/actions"><code>src/actions</code><span>Structured action boundary</span></a>
+              <a href="https://github.com/rishvaiyer/thirdwurld-public/tree/main/src/relationships"><code>src/relationships</code><span>Evidence-backed social state</span></a>
+              <a href="https://github.com/rishvaiyer/thirdwurld-public/tree/main/src/events"><code>src/events</code><span>World event validation</span></a>
+              <a href="https://github.com/rishvaiyer/thirdwurld-public/tree/main/src/hyperfy"><code>src/hyperfy</code><span>Engine integration boundary</span></a>
+              <a href="https://github.com/rishvaiyer/thirdwurld-public/tree/main/test"><code>test</code><span>Behavior and interface checks</span></a>
+            </div>
+          </section>
+
+          <footer class="article-footer">
+            <span>Thirdwurld</span>
+            <a href="#overview">Back to top ↑</a>
+          </footer>
+        </article>
+      </main>
+
+      <aside class="right-rail" aria-label="On this page">
+        <p>On this page</p>
+        <a href="#runtime">World runtime</a>
+        <a href="#lifecycle">Resident lifecycle</a>
+        <a href="#state">State and relationships</a>
+        <a href="#actions">Action and event flow</a>
+        <a href="#hyperfy">Hyperfy boundary</a>
+        <a href="#configuration">Configuration</a>
+        <a href="#safety">Safety boundaries</a>
+        <a href="#verification">Verification</a>
+        <a href="#source-map">Public source map</a>
+      </aside>
+    </div>
+  </body>
+</html>
