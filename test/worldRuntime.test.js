@@ -60,11 +60,14 @@ test('a new runtime exposes a safe idle snapshot', () => {
 })
 
 test('occupancy updates simulation pace through one interface', () => {
-  const { runtime } = createRuntime()
+  const { runtime, advanceTime } = createRuntime()
 
   assert.equal(runtime.setHumanCount(1).mode, 'active')
   assert.equal(runtime.snapshot().humanCount, 1)
-  assert.equal(runtime.setHumanCount(0).autonomousWorkAllowed, false)
+  assert.equal(runtime.setHumanCount(0).reason, 'empty-world-grace')
+  advanceTime(15 * 60 * 1_000)
+  assert.equal(runtime.snapshot().pace.autonomousWorkAllowed, false)
+  assert.equal(runtime.snapshot().presence.mode, 'empty')
 })
 
 test('resident motion is planned through the runtime interface', () => {

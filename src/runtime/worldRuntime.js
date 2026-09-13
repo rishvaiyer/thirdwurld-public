@@ -13,6 +13,7 @@ import { createWorldEventEvidence } from '../events/worldEventEvidence.js'
 import { createWorldNavigation } from '../navigation/worldNavigation.js'
 import { createRelationshipEvidence } from '../relationships/relationshipEvidence.js'
 import { createInteractionPointReservations } from '../simulation/interactionPointReservations.js'
+import { createHumanOccupancyLifecycle } from '../simulation/humanOccupancyLifecycle.js'
 import { createResidentActivitySelector } from '../simulation/residentActivitySelection.js'
 import { createResidentLocomotion } from '../simulation/residentLocomotion.js'
 import { createResidentRoutine } from '../simulation/residentRoutine.js'
@@ -49,9 +50,10 @@ export function createWorldRuntime({ configs = {}, clock, navigationAdapter = {}
   const planResidentMotion = createResidentLocomotion(resolvedConfigs.locomotion)
   const eventEvidence = createWorldEventEvidence(resolvedConfigs.worldEvents)
   const worldClock = createSynchronizedWorldClock(clock, clock?.readMonotonicTimeMs)
+  const occupancy = createHumanOccupancyLifecycle(resolvedConfigs.simulation.occupancy)
 
-  let humanCount = 0
-  let pace = selectPace({ humanCount })
+  let presence = occupancy.snapshot(worldClock.now())
+  let pace = selectPace({ humanCount: presence.humanCount })
   let breadcrumbTrail = []
   let lastAction = null
   let lastActivity = null
@@ -61,9 +63,22 @@ export function createWorldRuntime({ configs = {}, clock, navigationAdapter = {}
   const publicEvents = []
 
   function setHumanCount(count) {
-    pace = selectPace({ humanCount: count })
-    humanCount = count
+    presence = occupancy.observe(count, worldClock.now())
+    pace = selectPace({
+      humanCount: presence.humanCount,
+      emptyGraceActive: presence.mode === 'grace',
+    })
     return structuredClone(pace)
+  }
+
+  function refreshPresence() {
+    const worldTimeMs = worldClock.now()
+    presence = occupancy.snapshot(worldTimeMs)
+    pace = selectPace({
+      humanCount: presence.humanCount,
+      emptyGraceActive: presence.mode === 'grace',
+    })
+    return worldTimeMs
   }
 
   function travel(destinationId) {
@@ -137,9 +152,11 @@ export function createWorldRuntime({ configs = {}, clock, navigationAdapter = {}
   }
 
   function snapshot() {
+    const worldTimeMs = refreshPresence()
     return structuredClone({
-      worldTimeMs: worldClock.now(),
-      humanCount,
+      worldTimeMs,
+      humanCount: presence.humanCount,
+      presence,
       pace,
       destinations: navigation.listDestinations(),
       breadcrumbTrail,
