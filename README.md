@@ -14,6 +14,7 @@ The repository currently contains engine-independent modules for:
 - Bounded route progress after long idle periods
 - Safe resident turning, gait selection, and neighbor avoidance
 - Configurable resident activity selection from bounded needs
+- World-time-based resident routines with explicit transitions
 - Strict parsing of structured resident actions
 - Evidence-backed relationship state
 - Privacy-safe world event validation and public projection
