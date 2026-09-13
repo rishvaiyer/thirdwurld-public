@@ -94,6 +94,14 @@ test('resident activity is selected through the runtime interface', () => {
   assert.equal(runtime.snapshot().lastActivity.activityId, 'socialize')
 })
 
+test('resident routine follows synchronized world time', () => {
+  const { runtime, advanceTime } = createRuntime()
+
+  assert.equal(runtime.currentResidentRoutine().activityId, 'rest')
+  advanceTime(9 * 60 * 60 * 1_000)
+  assert.equal(runtime.currentResidentRoutine().activityId, 'explore')
+})
+
 test('successful travel updates movement and breadcrumb state', () => {
   const { runtime, movements } = createRuntime()
 
