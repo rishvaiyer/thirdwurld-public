@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process'
 import path from 'node:path'
 
 const sourceRoots = ['src', 'test']
+const documentationRoots = ['site']
 const extraTextFiles = ['README.md', 'package.json']
 const findings = []
 
@@ -19,6 +20,8 @@ async function filesBelow(directory) {
 }
 
 const sourceFiles = (await Promise.all(sourceRoots.map(filesBelow))).flat().sort()
+const documentationFiles = (await Promise.all(documentationRoots.map(filesBelow))).flat().sort()
+const publicTextFiles = [...sourceFiles, ...documentationFiles, ...extraTextFiles]
 for (const file of sourceFiles.filter(file => file.endsWith('.js'))) {
   const result = spawnSync(process.execPath, ['--check', file], { encoding: 'utf8' })
   if (result.status !== 0) findings.push(`${file}: invalid JavaScript syntax`)
@@ -27,24 +30,28 @@ for (const file of sourceFiles.filter(file => file.endsWith('.js'))) {
 const checks = [
   ['absolute local path', /(?:\/Users\/|[A-Z]:\\Users\\)/],
   ['environment access', /process\.env/],
-  ['embedded URL', /https?:\/\//],
   ['secret-shaped term', /\b(?:api[_ -]?key|password|secret|token|webhook)\b/i],
   ['unfinished note', /\b(?:TODO|FIXME|HACK|XXX)\b/],
   ['internal agent reference', /\b(?:Codex|Claude)\b/],
+  ['target-audience label', /\b(?:recruiter|hiring|hackathon|judge|dating|romantic)\b/i],
   ['long dash character', /[—–]/],
 ]
 
-for (const file of [...sourceFiles, ...extraTextFiles]) {
+for (const file of publicTextFiles) {
   const content = await readFile(file, 'utf8')
   for (const [label, pattern] of checks) {
     if (pattern.test(content)) findings.push(`${file}: ${label}`)
   }
 }
 
+for (const file of sourceFiles) {
+  const content = await readFile(file, 'utf8')
+  if (/https?:\/\//.test(content)) findings.push(`${file}: embedded URL`)
+}
+
 if (findings.length) {
   process.stderr.write(`${findings.join('\n')}\n`)
   process.exitCode = 1
 } else {
-  process.stdout.write(`repository guard passed for ${sourceFiles.length + extraTextFiles.length} public files\n`)
+  process.stdout.write(`repository guard passed for ${publicTextFiles.length} public files\n`)
 }
-
