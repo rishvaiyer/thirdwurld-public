@@ -11,6 +11,7 @@ The repository currently contains engine-independent modules for:
 - Configurable world destinations and safe navigation outcomes
 - A synchronized world clock based on one shared epoch
 - Occupancy-aware simulation pacing and unattended cost control
+- A bounded wake grace after the last human leaves
 - Bounded route progress after long idle periods
 - Safe resident turning, gait selection, and neighbor avoidance
 - Configurable resident activity selection from bounded needs
