@@ -102,6 +102,20 @@ test('resident routine follows synchronized world time', () => {
   assert.equal(runtime.currentResidentRoutine().activityId, 'explore')
 })
 
+test('interaction points are reserved and released through the runtime', () => {
+  const { runtime } = createRuntime()
+  const result = runtime.reserveInteractionPoint({
+    residentId: 'resident:a',
+    locationId: 'town-square',
+    candidates: [[0, 0, 0]],
+  })
+
+  assert.equal(result.ok, true)
+  assert.equal(runtime.snapshot().interactionPointReservations.length, 1)
+  assert.equal(runtime.releaseInteractionPoint('resident:a'), true)
+  assert.equal(runtime.snapshot().interactionPointReservations.length, 0)
+})
+
 test('successful travel updates movement and breadcrumb state', () => {
   const { runtime, movements } = createRuntime()
 

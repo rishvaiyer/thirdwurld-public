@@ -1,6 +1,7 @@
 
 import { actionConfig } from '../config/actions.js'
 import { activityConfig } from '../config/activities.js'
+import { interactionConfig } from '../config/interactions.js'
 import { locomotionConfig } from '../config/locomotion.js'
 import { relationshipConfig } from '../config/relationships.js'
 import { routineConfig } from '../config/routines.js'
@@ -11,6 +12,7 @@ import { createStructuredActionParser } from '../actions/structuredAction.js'
 import { createWorldEventEvidence } from '../events/worldEventEvidence.js'
 import { createWorldNavigation } from '../navigation/worldNavigation.js'
 import { createRelationshipEvidence } from '../relationships/relationshipEvidence.js'
+import { createInteractionPointReservations } from '../simulation/interactionPointReservations.js'
 import { createResidentActivitySelector } from '../simulation/residentActivitySelection.js'
 import { createResidentLocomotion } from '../simulation/residentLocomotion.js'
 import { createResidentRoutine } from '../simulation/residentRoutine.js'
@@ -20,6 +22,7 @@ import { createSynchronizedWorldClock } from '../time/worldClock.js'
 const defaultConfigs = {
   actions: actionConfig,
   activities: activityConfig,
+  interactions: interactionConfig,
   locomotion: locomotionConfig,
   relationships: relationshipConfig,
   routines: routineConfig,
@@ -38,6 +41,7 @@ export function createWorldRuntime({ configs = {}, clock, navigationAdapter = {}
   const selectPace = createSimulationPacePolicy(resolvedConfigs.simulation)
   const parseAction = createStructuredActionParser(resolvedConfigs.actions)
   const relationshipEvidence = createRelationshipEvidence(resolvedConfigs.relationships)
+  const interactionPoints = createInteractionPointReservations(resolvedConfigs.interactions)
   const selectActivity = createResidentActivitySelector(resolvedConfigs.activities, { random })
   const selectRoutinePeriod = createResidentRoutine(resolvedConfigs.routines, {
     knownActivityIds: resolvedConfigs.activities.activities.map(activity => activity.id),
@@ -124,6 +128,14 @@ export function createWorldRuntime({ configs = {}, clock, navigationAdapter = {}
     return structuredClone(selectRoutinePeriod(worldClock.now()))
   }
 
+  function reserveInteractionPoint(input) {
+    return interactionPoints.reserve(input)
+  }
+
+  function releaseInteractionPoint(residentId) {
+    return interactionPoints.release(residentId)
+  }
+
   function snapshot() {
     return structuredClone({
       worldTimeMs: worldClock.now(),
@@ -133,6 +145,7 @@ export function createWorldRuntime({ configs = {}, clock, navigationAdapter = {}
       breadcrumbTrail,
       lastAction,
       lastActivity,
+      interactionPointReservations: interactionPoints.snapshot(),
       relationships: [...relationships.values()],
       publicEvents,
     })
@@ -147,6 +160,8 @@ export function createWorldRuntime({ configs = {}, clock, navigationAdapter = {}
     planResidentMotion,
     selectResidentActivity,
     currentResidentRoutine,
+    reserveInteractionPoint,
+    releaseInteractionPoint,
     snapshot,
   }
 }
