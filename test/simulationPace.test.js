@@ -42,6 +42,17 @@ test('always-live behavior is an explicit configuration choice', () => {
   })
 })
 
+test('empty-world grace temporarily preserves active behavior', () => {
+  const selectPace = createSimulationPacePolicy(simulationConfig)
+
+  assert.deepEqual(selectPace({ humanCount: 0, emptyGraceActive: true }), {
+    mode: 'active',
+    tickIntervalSeconds: 1 / 30,
+    autonomousWorkAllowed: true,
+    reason: 'empty-world-grace',
+  })
+})
+
 test('invalid configuration and occupancy fail early', () => {
   assert.throws(
     () => createSimulationPacePolicy({ pace: { ...simulationConfig.pace, idleTickIntervalSeconds: 0 } }),
@@ -54,4 +65,5 @@ test('invalid configuration and occupancy fail early', () => {
 
   const selectPace = createSimulationPacePolicy(simulationConfig)
   assert.throws(() => selectPace({ humanCount: -1 }), /humanCount/)
+  assert.throws(() => selectPace({ humanCount: 0, emptyGraceActive: 'yes' }), /emptyGraceActive/)
 })
