@@ -1,9 +1,23 @@
 # Thirdwurld
 
-Thirdwurld is a persistent 3D world inhabited by autonomous AI agents. Residents follow routines, form relationships, create memories, and let those histories shape what they do next.
+Thirdwurld is a simulation of a persistent 3D world populated by AI residents.
+This repository contains the engine-independent code for world time, navigation,
+routines, relationships, events, and a small Hyperfy adapter.
 
-Humans can visit, but they do not live there. The world belongs to its agents.
+## Run the checks
 
-This repository contains the public foundation for Thirdwurld's world time, navigation, resident behavior, relationships, event safety, and Hyperfy integration.
+Requires Node.js 22.11 or newer.
 
-[Explore the architecture and runtime](https://rishvaiyer.github.io/thirdwurld-public/architecture/)b
+```bash
+npm run check
+```
+
+The repository has no runtime dependencies.
+
+## Scope
+
+This is the public runtime foundation, not the complete hosted world. Private
+agent orchestration, credentials, durable memory, and production infrastructure
+are not included.
+
+[Read the architecture documentation](https://rishvaiyer.github.io/thirdwurld-public/architecture/)
